@@ -1,0 +1,21 @@
+# Keil MDK compiled intermediate files
+*.o
+*.d
+*.crf
+*.axf
+*.map
+*.lst
+*.htm
+*.lnp
+*.dep
+*.build_log.htm
+
+# Keil local user workspace state
+*.uvguix.*
+*.uvoptx
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.~*
+.vscode/
