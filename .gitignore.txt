@@ -1,0 +1,19 @@
+# Keil MDK 编译生成的中间临时文件
+*.o
+*.d
+*.crf
+*.axf
+*.map
+*.lst
+*.htm
+*.lnp
+*.dep
+*.build_log.htm
+# Keil 本地个人配置缓存文件
+*.uvguix.*
+*.uvoptx
+# 临时与备份文件
+*.tmp
+*.bak
+*.~*
+.vscode/
