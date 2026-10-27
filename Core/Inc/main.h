@@ -81,6 +81,8 @@ void Error_Handler(void);
 #define MPU6050_SCL_GPIO_Port GPIOB
 #define MPU6050_SDA_Pin GPIO_PIN_11
 #define MPU6050_SDA_GPIO_Port GPIOB
+#define Servo_PWM_Pin GPIO_PIN_15
+#define Servo_PWM_GPIO_Port GPIOB
 #define OLED_RS_Pin GPIO_PIN_11
 #define OLED_RS_GPIO_Port GPIOD
 #define OLED_RST_Pin GPIO_PIN_12

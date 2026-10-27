@@ -168,6 +168,62 @@ void Test_Encoder_OLED(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
+
+/* 舵机转向测试任务 */
+void Test_Servo_OLED(void *pvParameters)
+{
+    int current_servo = SERVO_INIT; // 初始 1500us
+    int sweep_step = 0;
+    
+    while (1)
+    {
+        /* 模式 1：手柄连接时，由右摇杆实时控制舵机角度 */
+        if (PS2_RedLight() == 0)
+        {
+            // PS2_RX: 0 ~ 255, 中位 128
+            current_servo = 1500 + (int)((PS2_RX - 128) * 4.0f);
+            Set_Servo(current_servo);
+            
+            OLED_ShowString(0, 0, (u8*)"SERVO: PS2 CTRL ");
+        }
+        /* 模式 2：未连接手柄时，自动左右摆动测试 */
+        else
+        {
+            sweep_step++;
+            if (sweep_step % 4 == 1) current_servo = 1100;      // 左打方向
+            else if (sweep_step % 4 == 2) current_servo = 1500; // 回正
+            else if (sweep_step % 4 == 3) current_servo = 1900; // 右打方向
+            else current_servo = 1500;                          // 回正
+            
+            Set_Servo(current_servo);
+            OLED_ShowString(0, 0, (u8*)"SERVO: AUTO SWEEP");
+        }
+
+        /* 显示舵机当前 PWM 脉宽 (微秒) */
+        OLED_ShowString(0, 16, (u8*)"PULSE:");
+        OLED_ShowNumber(48, 16, (uint32_t)current_servo, 4, 12);
+        OLED_ShowString(80, 16, (u8*)"us");
+
+        /* 显示当前转向状态 */
+        if (current_servo < 1450) {
+            OLED_ShowString(0, 34, (u8*)"DIR: <-- LEFT   ");
+        } else if (current_servo > 1550) {
+            OLED_ShowString(0, 34, (u8*)"DIR: RIGHT -->  ");
+        } else {
+            OLED_ShowString(0, 34, (u8*)"DIR: -- CENTER --");
+        }
+
+        OLED_ShowString(0, 48, (u8*)"PIN: PB15 (TIM12)");
+
+        OLED_Refresh_Gram();
+        
+        if (PS2_RedLight() == 0) {
+            vTaskDelay(pdMS_TO_TICKS(50));
+        } else {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+    }
+}
 void sys_init(){
 	DWT_Delay_Init();
 	I2C_GPIOInit();
@@ -220,13 +276,14 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
 
 	sys_init();
 
 	xTaskCreate(vKeyTask, "vKeyTask", 128, NULL, 2, NULL);
 	xTaskCreate(pstwo_task, "pstwo_task", 128, NULL, 3, NULL);
-	xTaskCreate(Test_Encoder_OLED, "Test_Encoder_OLED", 256, NULL, 2, NULL);
+	xTaskCreate(Test_Servo_OLED, "Test_Servo_OLED", 256, NULL, 2, NULL);
 
 	vTaskStartScheduler();
   /* USER CODE END 2 */
