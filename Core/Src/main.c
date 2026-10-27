@@ -132,6 +132,56 @@ void Test_PS2_OLED(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
+
+
+/* 编码器测试与显示任务 */
+void Test_Encoder_OLED(void *pvParameters)
+{
+    int32_t total_a = 0;
+    int32_t total_b = 0;
+    
+    while (1)
+    {
+        /* 读取周期脉冲数 (50ms 周期) */
+        int pulse_a = Read_Encoder(2);   // 左轮 Encoder A (TIM2)
+        int pulse_b = -Read_Encoder(3);  // 右轮 Encoder B (TIM3 镜像取反)
+        
+        total_a += pulse_a;
+        total_b += pulse_b;
+        
+        OLED_ShowString(0, 0, (u8*)"ENCODER TEST");
+        
+        /* 瞬时脉冲增量 */
+        OLED_ShowString(0, 16, (u8*)"L:");
+        OLED_Show_Signed(16, 16, pulse_a);
+        OLED_ShowString(68, 16, (u8*)"R:");
+        OLED_Show_Signed(84, 16, pulse_b);
+        
+        /* 累计脉冲位置 */
+        OLED_ShowString(0, 34, (u8*)"POS_L:");
+        OLED_Show_Signed(48, 34, total_a);
+        
+        OLED_ShowString(0, 48, (u8*)"POS_R:");
+        OLED_Show_Signed(48, 48, total_b);
+        
+        OLED_Refresh_Gram();
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+void sys_init(){
+	DWT_Delay_Init();
+	I2C_GPIOInit();
+	OLED_Init();
+	OLED_Clear();
+	Motor_Init();
+	Set_Pwm(0, 0, 0, 0, 0);
+
+	/* 初始化 PS2 手柄接收器并配置为红灯模拟模式 */
+	PS2_SetInit();
+	Encoder_Init();
+
+
+}
 /* USER CODE END 0 */
 
 /**
@@ -168,20 +218,15 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM9_Init();
   MX_USART1_UART_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-	DWT_Delay_Init();
-	I2C_GPIOInit();
-	OLED_Init();
-	OLED_Clear();
-	Motor_Init();
-	Set_Pwm(0, 0, 0, 0, 0);
 
-	/* 初始化 PS2 手柄接收器并配置为红灯模拟模式 */
-	PS2_SetInit();
+	sys_init();
 
 	xTaskCreate(vKeyTask, "vKeyTask", 128, NULL, 2, NULL);
 	xTaskCreate(pstwo_task, "pstwo_task", 128, NULL, 3, NULL);
-	xTaskCreate(Test_PS2_OLED, "Test_PS2_OLED", 256, NULL, 2, NULL);
+	xTaskCreate(Test_Encoder_OLED, "Test_Encoder_OLED", 256, NULL, 2, NULL);
 
 	vTaskStartScheduler();
   /* USER CODE END 2 */
