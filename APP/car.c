@@ -129,6 +129,137 @@ void Kinematics_Inverse_Vz(float vx_ms, float vz_rads)
     Kinematics_Inverse_Angle(vx_ms, angle_r);
 }
 
+/* ============================================================================
+ * 3. WHEELTEC ROS 串口协议 (24字节 20Hz 上报 + 11字节中断接收 + 500ms 看门狗)
+ * ============================================================================ */
+volatile uint8_t ros_ctrl_active = 0;
+volatile float ros_target_vx = 0.0f;
+volatile float ros_target_vz = 0.0f;
+volatile TickType_t ros_last_rx_tick = 0;
+
+uint8_t ros_rx1_byte = 0;
+uint8_t ros_rx3_byte = 0;
+
+/* 11字节 ROS 控制指令流式状态机解析 (支持 USART1 与 USART3 独立缓冲) */
+void ROS_Parse_Byte(uint8_t byte, uint8_t port_id)
+{
+    static uint8_t rx_buf[2][ROS_RECV_SIZE];
+    static uint8_t rx_cnt[2] = {0, 0};
+
+    if (Deviation_Count < CONTROL_DELAY)
+    {
+        return; /* IMU 零漂校准期间忽略外部控制指令 */
+    }
+
+    uint8_t p = (port_id > 0) ? 1 : 0;
+
+    if (rx_cnt[p] == 0)
+    {
+        if (byte == ROS_FRAME_HEADER)
+        {
+            rx_buf[p][0] = byte;
+            rx_cnt[p] = 1;
+        }
+        return;
+    }
+
+    rx_buf[p][rx_cnt[p]++] = byte;
+
+    if (rx_cnt[p] >= ROS_RECV_SIZE)
+    {
+        rx_cnt[p] = 0;
+
+        if (rx_buf[p][ROS_RECV_SIZE - 1] == ROS_FRAME_TAIL)
+        {
+            /* 计算前 9 字节 BCC 异或校验和 */
+            uint8_t bcc = 0;
+            for (uint8_t i = 0; i < 9; i++)
+            {
+                bcc ^= rx_buf[p][i];
+            }
+
+            if (bcc == rx_buf[p][9])
+            {
+                int16_t vx_mms   = (int16_t)((rx_buf[p][3] << 8) | rx_buf[p][4]);
+                int16_t vz_mrads = (int16_t)((rx_buf[p][7] << 8) | rx_buf[p][8]);
+
+                ros_target_vx = (float)vx_mms * 0.001f;
+                ros_target_vz = (float)vz_mrads * 0.001f;
+
+                ros_last_rx_tick = xTaskGetTickCountFromISR();
+                ros_ctrl_active = 1;
+                car_is_armed = 1;
+            }
+        }
+    }
+}
+
+/* 20Hz ROS 底层状态上报任务: 打包 24 字节标准帧并通过 USART1 (USB) 与 USART3 (4Pin ROS口) 发送 */
+void ROS_Data_Task(void *pvParameters)
+{
+    uint8_t tx_buf[ROS_SEND_SIZE];
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    while (1)
+    {
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(50)); /* 20Hz (50ms) */
+
+        int16_t ax = accel[1];                 /* MPU6050 +Y -> ROS +X */
+        int16_t ay = (int16_t)(-accel[0]);     /* MPU6050 -X -> ROS +Y */
+        int16_t az = accel[2];                 /* MPU6050 +Z -> ROS +Z */
+
+        int16_t gx = gyro[1];
+        int16_t gy = (int16_t)(-gyro[0]);
+        int16_t gz = car_is_armed ? gyro[2] : 0; /* 停车/上锁时 Z 轴角速度发 0，防止 ROS 里程计静止漂移 */
+
+        int16_t bat_mv = (int16_t)(Get_Battery_Voltage() * 1000.0f);
+
+        tx_buf[0]  = ROS_FRAME_HEADER;
+        tx_buf[1]  = car_is_armed ? 0 : 1;     /* Flag_Stop: 0=使能正常, 1=失能停止 */
+
+        /* 三轴车体速度 (mm/s, mm/s, mrad/s) */
+        tx_buf[2]  = (uint8_t)(chassis_vx_mms >> 8);
+        tx_buf[3]  = (uint8_t)(chassis_vx_mms);
+        tx_buf[4]  = (uint8_t)(chassis_vy_mms >> 8);
+        tx_buf[5]  = (uint8_t)(chassis_vy_mms);
+        tx_buf[6]  = (uint8_t)(chassis_vz_mrads >> 8);
+        tx_buf[7]  = (uint8_t)(chassis_vz_mrads);
+
+        /* 三轴加速度计原始值 */
+        tx_buf[8]  = (uint8_t)(ax >> 8);
+        tx_buf[9]  = (uint8_t)(ax);
+        tx_buf[10] = (uint8_t)(ay >> 8);
+        tx_buf[11] = (uint8_t)(ay);
+        tx_buf[12] = (uint8_t)(az >> 8);
+        tx_buf[13] = (uint8_t)(az);
+
+        /* 三轴陀螺仪原始值 */
+        tx_buf[14] = (uint8_t)(gx >> 8);
+        tx_buf[15] = (uint8_t)(gx);
+        tx_buf[16] = (uint8_t)(gy >> 8);
+        tx_buf[17] = (uint8_t)(gy);
+        tx_buf[18] = (uint8_t)(gz >> 8);
+        tx_buf[19] = (uint8_t)(gz);
+
+        /* 电池电压 (mV) */
+        tx_buf[20] = (uint8_t)(bat_mv >> 8);
+        tx_buf[21] = (uint8_t)(bat_mv);
+
+        /* BCC 异或校验和 (字节 0..21) */
+        uint8_t bcc = 0;
+        for (uint8_t i = 0; i < 22; i++)
+        {
+            bcc ^= tx_buf[i];
+        }
+        tx_buf[22] = bcc;
+        tx_buf[23] = ROS_FRAME_TAIL;
+
+        /* 同时从板载 USB 串口 (USART1) 和 4Pin ROS 串口 (USART3) 发送 */
+        HAL_UART_Transmit(&huart1, tx_buf, ROS_SEND_SIZE, 10);
+        HAL_UART_Transmit(&huart3, tx_buf, ROS_SEND_SIZE, 10);
+    }
+}
+
 static void ShowSignedNum(u8 x, u8 y, int val, u8 len, u8 size)
 {
     if (val < 0)
@@ -153,6 +284,10 @@ void OledTask(void *pvParameters)
         if (Deviation_Count < CONTROL_DELAY)
         {
             OLED_ShowString(0, 0, (u8 *)"[IMU CAL..] ");
+        }
+        else if (ros_ctrl_active)
+        {
+            OLED_ShowString(0, 0, (u8 *)"[ROS CTRL]  ");
         }
         else if (!ps2_is_online)
         {
@@ -295,9 +430,10 @@ void Car_Remote_Task(void *pvParameters)
         uint8_t key_down = (cur_key != last_key) ? cur_key : 0;
         last_key = cur_key;
 
-        /* START 键: 解锁 / 上锁安全切换 */
+        /* START 键: 解锁 / 上锁安全切换 (按下 START 可随时接管并退出 ROS 控制模式) */
         if (key_down == PSB_START && ps2_is_online)
         {
+            ros_ctrl_active = 0;
             car_is_armed = !car_is_armed;
             Kinematics_Inverse_Angle(0.0f, 0.0f);
 
@@ -353,8 +489,22 @@ void Car_Remote_Task(void *pvParameters)
             HAL_GPIO_WritePin(GPIOA, Buzzer_Pin, GPIO_PIN_RESET);
         }
 
-        /* 3. 通过阿克曼逆运动学解算目标速度 (m/s) 与前轮转角 (rad) */
-        if (ps2_is_online && car_is_armed)
+        /* 3. 控制源仲裁: ROS 上位机控制模式 vs PS2 遥控手柄模式 */
+        if (ros_ctrl_active)
+        {
+            /* 500ms 串口通信看门狗保护: 上位机断联超时自动刹车停机 */
+            if ((xTaskGetTickCount() - ros_last_rx_tick) > pdMS_TO_TICKS(500))
+            {
+                ros_target_vx = 0.0f;
+                ros_target_vz = 0.0f;
+                Kinematics_Inverse_Angle(0.0f, 0.0f);
+            }
+            else
+            {
+                Kinematics_Inverse_Vz(ros_target_vx, ros_target_vz);
+            }
+        }
+        else if (ps2_is_online && car_is_armed)
         {
             /* 左摇杆 Y 轴与十字键上下控制前后油门 (-1.0 ~ +1.0) */
             int ly = (int)PS2_LY;

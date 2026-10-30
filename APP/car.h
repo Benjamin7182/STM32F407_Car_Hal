@@ -37,6 +37,21 @@ float Vz_to_Akm_Angle(float vx_ms, float vz_rads);
 void Kinematics_Inverse_Angle(float vx_ms, float angle_r_rad);
 void Kinematics_Inverse_Vz(float vx_ms, float vz_rads);
 
+/* WHEELTEC ROS 串口通信协议定义 (24字节上报 / 11字节接收) */
+#define ROS_FRAME_HEADER       0x7B    /* 帧头 '{' */
+#define ROS_FRAME_TAIL         0x7D    /* 帧尾 '}' */
+#define ROS_SEND_SIZE          24      /* STM32 -> ROS 上报帧长度 */
+#define ROS_RECV_SIZE          11      /* ROS -> STM32 控制帧长度 */
+
+extern volatile uint8_t ros_ctrl_active;
+extern volatile float ros_target_vx;
+extern volatile float ros_target_vz;
+extern uint8_t ros_rx1_byte;
+extern uint8_t ros_rx3_byte;
+
+void ROS_Parse_Byte(uint8_t byte, uint8_t port_id);
+void ROS_Data_Task(void *pvParameters);
+
 void Car_Remote_Task(void *pvParameters);
 void PID_task(void *pvParameters);
 void OledTask(void *pvParameters);

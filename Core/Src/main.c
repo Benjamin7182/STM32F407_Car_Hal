@@ -122,8 +122,11 @@ void sys_init(){
 	PS2_SetInit();
 	Encoder_Init();
 	
+	HAL_UART_Receive_IT(&huart1, &ros_rx1_byte, 1);
 	HAL_UART_Receive_IT(&huart2, (uint8_t *)&rx_buff, 1); 
+	HAL_UART_Receive_IT(&huart3, &ros_rx3_byte, 1);
 }
+
 
 
 
@@ -169,6 +172,7 @@ int main(void)
   MX_TIM12_Init();
   MX_ADC1_Init();
   MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
 	sys_init();
@@ -178,9 +182,10 @@ int main(void)
 	xTaskCreate(vKeyTask, "vKeyTask", 128, NULL, 2, NULL);
 	xTaskCreate(MPU6050_task, "MPU6050", 256, NULL, 2, NULL);
 	xTaskCreate(Car_Remote_Task, "PS2Remote", 256, NULL, 2, NULL);
+	xTaskCreate(ROS_Data_Task, "ROSTask", 256, NULL, 3, NULL);
 	xTaskCreate(PID_task, "PID_task", 512, NULL, 4, NULL);
 	xTaskCreate(OledTask, "OledTask", 512, NULL, 1, NULL);
-	xTaskCreate(VofaTask, "VofaTask", 512, NULL, 3, NULL);
+//	xTaskCreate(VofaTask, "VofaTask", 512, NULL, 3, NULL);
 	
 	vTaskStartScheduler();
   /* USER CODE END 2 */

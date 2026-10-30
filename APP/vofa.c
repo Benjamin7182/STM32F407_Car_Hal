@@ -57,7 +57,17 @@ float vofa_float;
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	uint8_t dat;
-	if (huart->Instance == huart2.Instance)
+	if (huart->Instance == USART1)
+	{
+		ROS_Parse_Byte(ros_rx1_byte, 0);
+		HAL_UART_Receive_IT(&huart1, &ros_rx1_byte, 1);
+	}
+	else if (huart->Instance == USART3)
+	{
+		ROS_Parse_Byte(ros_rx3_byte, 1);
+		HAL_UART_Receive_IT(&huart3, &ros_rx3_byte, 1);
+	}
+	else if (huart->Instance == huart2.Instance)
 	{
 		dat = rx_buff;
 
@@ -94,10 +104,18 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
-	if (huart->Instance == huart2.Instance)
+	__HAL_UART_CLEAR_OREFLAG(huart);
+
+	if (huart->Instance == USART1)
 	{
-		/* 清除 ORE/FE/NE/PE 错误标志（读 SR 再读 DR），防止中断死锁或接收挂死 */
-		__HAL_UART_CLEAR_OREFLAG(huart);
+		HAL_UART_Receive_IT(&huart1, &ros_rx1_byte, 1);
+	}
+	else if (huart->Instance == USART3)
+	{
+		HAL_UART_Receive_IT(&huart3, &ros_rx3_byte, 1);
+	}
+	else if (huart->Instance == huart2.Instance)
+	{
 		vofa_I = 0;
 		HAL_UART_Receive_IT(&huart2, (uint8_t *)&rx_buff, 1);
 	}
