@@ -196,7 +196,7 @@ void Key_Scan(KeyHandle_TypeDef *hkey)
 static void OnKeySingleClick(void)
 {
     HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	current_pwm_l=3000;
+    target_speed_l = (target_speed_l < 450.0f) ? 600.0f : 300.0f;
 }
 
 /**

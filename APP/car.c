@@ -1,8 +1,8 @@
 #include "car.h"
 #include <stdio.h>
 
-float Velocity_KP = 300.0f;
-float Velocity_KI = 300.0f;
+float Velocity_KP = 3.6f;
+float Velocity_KI = 0.75f;
 QueueHandle_t xVofaQueue = NULL;
 static inline float float_abs(float insert)
 {
@@ -10,13 +10,13 @@ static inline float float_abs(float insert)
 }
 
 float target_speed = 0.0f;
-float target_speed_l = 0.0f;
+float target_speed_l = 300.0f;
 float target_speed_r = 0.0f;
 float actual_speed_l = 0.0f;
 float actual_speed_r = 0.0f;
 int encoder_l = 0;
 int encoder_r = 0;
-int current_pwm_l = 1500;
+int current_pwm_l = 0;
 int current_pwm_r = 0;
 int target_servo = 1500;
 void OledTask(void *pvParameters){
@@ -37,6 +37,7 @@ void PID_task(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(80));
     HAL_GPIO_WritePin(GPIOA, Buzzer_Pin, GPIO_PIN_RESET);
 
+    Incremental_PI_Clear();
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     while (1)
@@ -45,12 +46,13 @@ void PID_task(void *pvParameters)
         encoder_l = Read_Encoder(2);
         encoder_r = -Read_Encoder(3);
 
-//        current_pwm_l = Incremental_PI_A(actual_speed_l, target_speed_l);
-//        current_pwm_r = Incremental_PI_B(actual_speed_r, target_speed_r);
+        /* 闭环增量式 PI 控制：以编码器脉冲数为单位跟踪 target_speed_l */
+        current_pwm_l = Incremental_PI_A((float)encoder_l, target_speed_l);
         Set_Pwm(current_pwm_l, 0, 0, 0, target_servo);
 
+        /* 入队：通道0 = 目标脉冲 target_speed_l，通道1 = 实际脉冲 encoder_l */
+        tx_pkt.pwm_l = target_speed_l;
         tx_pkt.enc_l = (float)encoder_l;
-        tx_pkt.pwm_l = (float)current_pwm_l;
         if (xVofaQueue != NULL)
         {
             xQueueSend(xVofaQueue, &tx_pkt, 0);
@@ -66,7 +68,7 @@ void VofaTask(void *pvParameters)
     {
         if (xQueueReceive(xVofaQueue, &rx_pkt, portMAX_DELAY) == pdPASS)
         {
-            /* FireWater 协议 (标准 CSV 格式: "PWM,编码器脉冲\n") */
+            /* FireWater 协议 (标准 CSV 格式: "目标脉冲,实际脉冲\n") */
             int len = snprintf(csv_buf, sizeof(csv_buf), "%d,%d\n", (int)rx_pkt.pwm_l, (int)rx_pkt.enc_l);
             if (len > 0)
             {
