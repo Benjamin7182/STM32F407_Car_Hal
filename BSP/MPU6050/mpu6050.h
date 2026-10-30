@@ -360,7 +360,7 @@
 #define MPU6050_STK_SIZE 		256  
 
 #define RATE_100_HZ		100
-#define CONTROL_DELAY		1000
+#define CONTROL_DELAY		100
 extern	short gyro[3], accel[3];
 extern int Deviation_Count;
 extern short Deviation_gyro[3],Original_gyro[3]; 

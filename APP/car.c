@@ -45,32 +45,47 @@ void OledTask(void *pvParameters)
 {
     while (1)
     {
-        if (!ps2_is_online)
+        float volt = Get_Battery_Voltage();
+
+        /* 第 1 行 (Y=0): 状态 + 电池电压 */
+        if (Deviation_Count < CONTROL_DELAY)
         {
-            OLED_ShowString(0, 0, (u8 *)"[NO PS2] ID:");
-            OLED_ShowNumber(72, 0, (uint32_t)Data[1], 3, 12);
+            OLED_ShowString(0, 0, (u8 *)"[IMU CAL..] ");
+        }
+        else if (!ps2_is_online)
+        {
+            OLED_ShowString(0, 0, (u8 *)"[NO PS2]    ");
         }
         else if (!car_is_armed)
         {
-            OLED_ShowString(0, 0, (u8 *)"[LOCK] PRESS ST ");
+            OLED_ShowString(0, 0, (u8 *)"[LOCK ST]   ");
         }
         else
         {
-            if (car_gear == 1)      OLED_ShowString(0, 0, (u8 *)"[ARMED] G:1(300)");
-            else if (car_gear == 2) OLED_ShowString(0, 0, (u8 *)"[ARMED] G:2(600)");
-            else                    OLED_ShowString(0, 0, (u8 *)"[ARMED] G:3(900)");
+            if (car_gear == 1)      OLED_ShowString(0, 0, (u8 *)"[ARM G1]    ");
+            else if (car_gear == 2) OLED_ShowString(0, 0, (u8 *)"[ARM G2]    ");
+            else                    OLED_ShowString(0, 0, (u8 *)"[ARM G3]    ");
         }
+        OLED_ShowFloat(72, 0, volt, 2, 1, 12);
+        OLED_ShowChar(102, 0, 'V', 12, 1);
 
-        OLED_ShowString(0, 16, (u8 *)"T:");
-        ShowSignedNum(14, 16, (int)target_speed, 4, 12);
-        OLED_ShowString(48, 16, (u8 *)" S:");
-        OLED_ShowNumber(66, 16, (uint32_t)target_servo, 4, 12);
+        /* 第 2 行 (Y=16): MPU6050 偏航角 YAW (度) + Z轴角速度 GZ */
+        OLED_ShowString(0, 16, (u8 *)"YAW:");
+        ShowSignedNum(24, 16, (int)Yaw, 3, 12);
+        OLED_ShowString(54, 16, (u8 *)" GZ:");
+        ShowSignedNum(78, 16, (int)gyro[2], 5, 12);
 
+        /* 第 3 行 (Y=32): 左轮脉冲 L + 目标脉冲 T */
         OLED_ShowString(0, 32, (u8 *)"L:");
-        ShowSignedNum(14, 32, encoder_l, 4, 12);
+        ShowSignedNum(12, 32, encoder_l, 4, 12);
+        OLED_ShowString(48, 32, (u8 *)" T:");
+        ShowSignedNum(66, 32, (int)target_speed, 4, 12);
 
+        /* 第 4 行 (Y=48): 右轮脉冲 R + 舵机脉宽 S */
         OLED_ShowString(0, 48, (u8 *)"R:");
-        ShowSignedNum(14, 48, encoder_r, 4, 12);
+        ShowSignedNum(12, 48, encoder_r, 4, 12);
+        OLED_ShowString(48, 48, (u8 *)" S:");
+        OLED_ShowNumber(66, 48, (uint32_t)target_servo, 4, 12);
 
         OLED_Refresh_Gram();
         vTaskDelay(pdMS_TO_TICKS(200));

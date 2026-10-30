@@ -20,51 +20,35 @@ int Deviation_Count;
 short Deviation_gyro[3],Original_gyro[3];  
 short Deviation_accel[3],Original_accel[3]; 
 float q0=1.0f,q1=0.0f,q2=0.0f,q3=0.0f;
-//static signed char gyro_orientation[9] = {-1, 0, 0,
-//                                           0,-1, 0,
-//                                           0, 0, 1};
-
-//static  unsigned short inv_row_2_scale(const signed char *row)
-//{
-//    unsigned short b;
-
-//    if (row[0] > 0)
-//        b = 0;
-//    else if (row[0] < 0)
-//        b = 4;
-//    else if (row[1] > 0)
-//        b = 1;
-//    else if (row[1] < 0)
-//        b = 5;
-//    else if (row[2] > 0)
-//        b = 2;
-//    else if (row[2] < 0)
-//        b = 6;
-//    else
-//        b = 7;      // error
-//    return b;
-//}
+float Roll = 0.0f, Pitch = 0.0f, Yaw = 0.0f;
 
 void MPU6050_task(void *pvParameters)
 {
     TickType_t lastWakeTime = xTaskGetTickCount();
     while(1)
     {	
-			//This task runs at 100Hz
-			//此任务以100Hz的频率运行
-			vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(10));	
-		
-			//Read the gyroscope zero before starting
-      //开机前，读取陀螺仪零点			
-		  if(Deviation_Count<CONTROL_DELAY)
-		  {	 
-		  	Deviation_Count++;
-			  memcpy(Deviation_gyro,gyro,sizeof(gyro));		
-				memcpy(Deviation_accel,accel,sizeof(accel));	
-		  }		
+        /* 50Hz (20ms) 读取 MPU6050 六轴数据并积分偏航角 Yaw */
+        vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(20));	
 
-     MPU_Get_Gyroscope(); //得到陀螺仪数据
-     MPU_Get_Accelscope(); //获得加速度计值(原始值)
+        /* 开机前 2 秒静止校准陀螺仪与加速度计零偏 */
+        if(Deviation_Count < CONTROL_DELAY)
+        {	 
+            Deviation_Count++;
+            memcpy(Deviation_gyro, gyro, sizeof(gyro));		
+            memcpy(Deviation_accel, accel, sizeof(accel));	
+        }		
+
+        MPU_Get_Gyroscope();  // 得到去零偏后的三轴角速度 gyro[0..2] (±500°/s -> 65.536 LSB/(°/s))
+        MPU_Get_Accelscope(); // 得到去零偏后的三轴加速度 accel[0..2] (±2g -> 16384 LSB/g)
+
+        if(Deviation_Count >= CONTROL_DELAY)
+        {
+            /* Z轴角速度死区抑制零漂，积分计算车头偏航角 Yaw (单位: 度) */
+            if(gyro[2] > 15 || gyro[2] < -15)
+            {
+                Yaw += ((float)gyro[2] / 65.536f) * 0.02f;
+            }
+        }
     }
 }  
 

@@ -113,6 +113,7 @@ void Test_Servo_OLED(void *pvParameters)
 void sys_init(){
 	DWT_Delay_Init();
 	I2C_GPIOInit();
+	MPU6050_initialize();
 	OLED_Init();
 	OLED_Clear();
 	Motor_Init();
@@ -175,6 +176,7 @@ int main(void)
 	xVofaQueue = xQueueCreate(8, sizeof(VofaPacket_t));
 
 	xTaskCreate(vKeyTask, "vKeyTask", 128, NULL, 2, NULL);
+	xTaskCreate(MPU6050_task, "MPU6050", 256, NULL, 2, NULL);
 	xTaskCreate(Car_Remote_Task, "PS2Remote", 256, NULL, 2, NULL);
 	xTaskCreate(PID_task, "PID_task", 512, NULL, 4, NULL);
 	xTaskCreate(OledTask, "OledTask", 512, NULL, 1, NULL);
