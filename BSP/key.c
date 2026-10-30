@@ -197,6 +197,7 @@ static void OnKeySingleClick(void)
 {
     HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     target_speed_l = (target_speed_l < 450.0f) ? 600.0f : 300.0f;
+    target_speed_r = target_speed_l;
 }
 
 /**

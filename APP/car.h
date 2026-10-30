@@ -9,8 +9,10 @@
 #define GEAR_3_MAX_SPEED   1.00f  // 3档: 1.00 m/s (1000 mm/s，高速巡航)
 
 typedef struct {
-    float pwm_l;
-    float enc_l;
+    float target_speed_l;
+    float encl;
+		float target_speed_r;
+    float encr;
 } VofaPacket_t;
 
 extern QueueHandle_t xVofaQueue;

@@ -27,8 +27,7 @@ extern uint8_t rx_buff;
 extern  float target_speed ;
 extern  float target_speed_l ;
 extern  float target_speed_r ;
-extern  float actual_speed_l ;
-extern  float actual_speed_r ;
+
 extern  int encoder_l ;
 extern  int encoder_r ;
 extern	int current_pwm_l ;
