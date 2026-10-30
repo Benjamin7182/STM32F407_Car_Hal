@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define Motor_B1_GPIO_Port GPIOE
 #define Motor_B2_Pin GPIO_PIN_6
 #define Motor_B2_GPIO_Port GPIOE
+#define Battery_Volt_Pin GPIO_PIN_0
+#define Battery_Volt_GPIO_Port GPIOB
 #define PS2_CLK_Pin GPIO_PIN_8
 #define PS2_CLK_GPIO_Port GPIOE
 #define Motor_C2_Pin GPIO_PIN_9

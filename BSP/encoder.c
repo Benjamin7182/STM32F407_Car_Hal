@@ -2,18 +2,18 @@
 
 void Encoder_Init(void)
 {
-  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL); // ¿ªÆô TIM2 ±àÂëÆ÷½Ó¿Ú
-    HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL); // ¿ªÆô TIM3 ±àÂëÆ÷½Ó¿Ú
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL); // å¼€å¯ TIM2 ç¼–ç å™¨æŽ¥å£
+    HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL); // å¼€å¯ TIM3 ç¼–ç å™¨æŽ¥å£
     
-    // Èç¹ûÅäÖÃÁË TIM4 ºÍ TIM5 Ò²Ò»²¢¿ªÆô£º
+    // å¦‚æžœé…ç½®äº† TIM4 å’Œ TIM5 ä¹Ÿä¸€å¹¶å¼€å¯ï¼š
     // HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
     // HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
 }
 
 /**
- * @brief  ¶ÁÈ¡µ±Ç°²ÉÑùÖÜÆÚµÄÂö³åÔöÁ¿£¬²¢ÇåÁã¼ÆÊýÆ÷
- * @param  tim_x: ¶¨Ê±Æ÷±àºÅ (2: ×óÂÖ, 3: ÓÒÂÖ)
- * @retval ÔöÁ¿Âö³åÖµ (´ø·ûºÅ£ºÕýÊý´ú±íÕý×ª£¬¸ºÊý´ú±í·´×ª)
+ * @brief  è¯»å–å½“å‰é‡‡æ ·å‘¨æœŸçš„è„‰å†²å¢žé‡ï¼Œå¹¶æ¸…é›¶è®¡æ•°å™¨
+ * @param  tim_x: å®šæ—¶å™¨ç¼–å· (2: å·¦è½®, 3: å³è½®)
+ * @retval å¢žé‡è„‰å†²å€¼ (å¸¦ç¬¦å·ï¼šæ­£æ•°ä»£è¡¨æ­£è½¬ï¼Œè´Ÿæ•°ä»£è¡¨åè½¬)
  */
 int Read_Encoder(uint8_t tim_x)
 {
@@ -21,9 +21,9 @@ int Read_Encoder(uint8_t tim_x)
     switch (tim_x)
     {
         case 2:
-            // Ç¿×ªÎª short ¼«Îª¹Ø¼ü£º0 ¼õ 1 ±ä³É 65535£¬Ç¿×ª short ×Ô¶¯±äÎª -1
+            // å¼ºè½¬ä¸º short æžä¸ºå…³é”®ï¼š0 å‡ 1 å˜æˆ 65535ï¼Œå¼ºè½¬ short è‡ªåŠ¨å˜ä¸º -1
             encoder_val = (short) TIM2->CNT;
-            TIM2->CNT=0; // ¶ÁÍêÇåÁã£¬ÎªÏÂÒ»¸öÖÜÆÚ×ö×¼±¸
+            TIM2->CNT=0; // è¯»å®Œæ¸…é›¶ï¼Œä¸ºä¸‹ä¸€ä¸ªå‘¨æœŸåšå‡†å¤‡
             break;
             
         case 3:

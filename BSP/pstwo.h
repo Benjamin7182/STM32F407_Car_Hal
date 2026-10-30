@@ -5,20 +5,20 @@
 #include "headfile.h"
 
 
-#define PS2_TASK_PRIO		4     //Task priority //ÈÎÎñÓÅÏÈ¼¶
-#define PS2_STK_SIZE 		256   //Task stack size //ÈÎÎñ¶ÑÕ»´óĞ¡
+#define PS2_TASK_PRIO		4     //Task priority //ä»»åŠ¡ä¼˜å…ˆçº§
+#define PS2_STK_SIZE 		256   //Task stack size //ä»»åŠ¡å †æ ˆå¤§å°
 
 
-// ?? CS (PE10)
+// é—å›¬â‚¬?CS (PE10)
 #define PS2_CS_H()   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_SET)
 #define PS2_CS_L()   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_RESET)
-// ?? CLK (PE8)
+// éƒå •æŒ“ CLK (PE8)
 #define PS2_CLK_H()  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, GPIO_PIN_SET)
 #define PS2_CLK_L()  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, GPIO_PIN_RESET)
-// ?? DO (PE12)
+// éç‰ˆåµæˆæ’³åš­ DO (PE12)
 #define PS2_DO_H()   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_SET)
 #define PS2_DO_L()   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_RESET)
-// ?? DI (PE15)
+// éç‰ˆåµæˆæ’³å† DI (PE15)
 #define PS2_DI_READ() HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_15)
 
 //These are our button constants
@@ -44,10 +44,10 @@
 #define PSB_CROSS       15
 #define PSB_SQUARE      16
 
-#define PSS_RX 5   //Right rocker x shaft data   //ÓÒÒ¡¸ËXÖáÊı¾İ
-#define PSS_RY 6   //The left rocker y axis data //×óÒ¡¸ËYÖáÊı¾İ
-#define PSS_LX 7   //Right rocker x axis data    //ÓÒÒ¡¸ËXÖáÊı¾İ
-#define PSS_LY 8   //The left rocker y axis data //×óÒ¡¸ËYÖáÊı¾İ
+#define PSS_RX 5   //Right rocker x shaft data   //å³æ‘‡æ†Xè½´æ•°æ®
+#define PSS_RY 6   //The left rocker y axis data //å·¦æ‘‡æ†Yè½´æ•°æ®
+#define PSS_LX 7   //Right rocker x axis data    //å³æ‘‡æ†Xè½´æ•°æ®
+#define PSS_LY 8   //The left rocker y axis data //å·¦æ‘‡æ†Yè½´æ•°æ®
 
 extern u8 Data[9];
 extern u16 MASK[16];

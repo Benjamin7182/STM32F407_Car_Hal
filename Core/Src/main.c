@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -56,155 +57,36 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// ????:??????????
-static void OLED_Show_Signed(uint8_t x, uint8_t y, int16_t val)
-{
-    if (val < 0) {
-        OLED_ShowChar(x, y, '-', 12, 1);
-        val = -val;
-    } else {
-        OLED_ShowChar(x, y, '+', 12, 1);
-    }
-    OLED_ShowNumber(x + 8, y, (uint32_t)val, 5, 12);
-}
-void Test_MPU6050_OLED(void *pvParameters)
-{
-
-    /* ?? MPU6050 ???? (?? WHO_AM_I ?????? 0x68) */
-    if (MPU6050_initialize() == 0) {
-        OLED_ShowString(0, 0, (u8*)"MPU6050: OK");
-			 OLED_Refresh_Gram(); 
-    } else {
-        OLED_ShowString(0, 0, (u8*)"MPU6050: FAIL");
-        OLED_Refresh_Gram();
-        while(1); // ????????????
-    }
-    while (1)
-    {
-        /* ?????? */
-        MPU_Get_Accelscope(); // ??????????? accel[3]
-        MPU_Get_Gyroscope();  // ?????????? gyro[3]
-        /* ????????? (X, Y, Z) */
-        OLED_ShowString(0, 16, (u8*)"AX:");
-        OLED_Show_Signed(24, 16, accel[0]);
-        OLED_ShowString(64, 16, (u8*)"AY:");
-        OLED_Show_Signed(88, 16, accel[1]);
-        
-        OLED_ShowString(0, 32, (u8*)"AZ:");
-        OLED_Show_Signed(24, 32, accel[2]);
-        /* ????????? (GX, GY, GZ) */
-        OLED_ShowString(0, 48, (u8*)"GZ:");
-        OLED_Show_Signed(24, 48, gyro[2]);
-        OLED_Refresh_Gram(); // ????
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-}
-
-/* PS2 手柄数据显示任务 */
-void Test_PS2_OLED(void *pvParameters)
-{
-    while (1)
-    {
-        /* 显示红灯模式连接状态 */
-        if (PS2_RedLight() == 0) {
-            OLED_ShowString(0, 0, (u8*)"PS2: RED OK   ");
-        } else {
-            OLED_ShowString(0, 0, (u8*)"PS2: SEARCHING");
-        }
-
-        /* 显示按键值 (1~16) */
-        OLED_ShowString(0, 16, (u8*)"KEY:");
-        OLED_ShowNumber(36, 16, (uint32_t)PS2_KEY, 2, 12);
-
-        /* 显示左摇杆 LX, LY (0~255) */
-        OLED_ShowString(0, 32, (u8*)"LX:");
-        OLED_ShowNumber(24, 32, (uint32_t)PS2_LX, 3, 12);
-        OLED_ShowString(64, 32, (u8*)"LY:");
-        OLED_ShowNumber(88, 32, (uint32_t)PS2_LY, 3, 12);
-
-        /* 显示右摇杆 RX, RY (0~255) */
-        OLED_ShowString(0, 48, (u8*)"RX:");
-        OLED_ShowNumber(24, 48, (uint32_t)PS2_RX, 3, 12);
-        OLED_ShowString(64, 48, (u8*)"RY:");
-        OLED_ShowNumber(88, 48, (uint32_t)PS2_RY, 3, 12);
-
-        OLED_Refresh_Gram();
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-}
-
-
-/* 编码器测试与显示任务 */
-void Test_Encoder_OLED(void *pvParameters)
-{
-    int32_t total_a = 0;
-    int32_t total_b = 0;
-    
-    while (1)
-    {
-        /* 读取周期脉冲数 (50ms 周期) */
-        int pulse_a = Read_Encoder(2);   // 左轮 Encoder A (TIM2)
-        int pulse_b = -Read_Encoder(3);  // 右轮 Encoder B (TIM3 镜像取反)
-        
-        total_a += pulse_a;
-        total_b += pulse_b;
-        
-        OLED_ShowString(0, 0, (u8*)"ENCODER TEST");
-        
-        /* 瞬时脉冲增量 */
-        OLED_ShowString(0, 16, (u8*)"L:");
-        OLED_Show_Signed(16, 16, pulse_a);
-        OLED_ShowString(68, 16, (u8*)"R:");
-        OLED_Show_Signed(84, 16, pulse_b);
-        
-        /* 累计脉冲位置 */
-        OLED_ShowString(0, 34, (u8*)"POS_L:");
-        OLED_Show_Signed(48, 34, total_a);
-        
-        OLED_ShowString(0, 48, (u8*)"POS_R:");
-        OLED_Show_Signed(48, 48, total_b);
-        
-        OLED_Refresh_Gram();
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-}
-
-/* 舵机转向测试任务 */
 void Test_Servo_OLED(void *pvParameters)
 {
-    int current_servo = SERVO_INIT; // 初始 1500us
-    int sweep_step = 0;
-    
+    int current_servo = SERVO_INIT;
+
     while (1)
     {
-        /* 模式 1：手柄连接时，由右摇杆实时控制舵机角度 */
-        if (PS2_RedLight() == 0)
-        {
-            // PS2_RX: 0 ~ 255, 中位 128
-            current_servo = 1500 + (int)((PS2_RX - 128) * 4.0f);
-            Set_Servo(current_servo);
-            
-            OLED_ShowString(0, 0, (u8*)"SERVO: PS2 CTRL ");
-        }
-        /* 模式 2：未连接手柄时，自动左右摆动测试 */
-        else
-        {
-            sweep_step++;
-            if (sweep_step % 4 == 1) current_servo = 1100;      // 左打方向
-            else if (sweep_step % 4 == 2) current_servo = 1500; // 回正
-            else if (sweep_step % 4 == 3) current_servo = 1900; // 右打方向
-            else current_servo = 1500;                          // 回正
-            
-            Set_Servo(current_servo);
-            OLED_ShowString(0, 0, (u8*)"SERVO: AUTO SWEEP");
+        PS2_Read();
+
+        int rx = (int)PS2_RX;
+        int delta = 0;
+
+        if (rx < 115) {
+            delta = -(115 - rx) * 400 / 115;
+        } else if (rx > 140) {
+            delta = (rx - 140) * 400 / 115;
         }
 
-        /* 显示舵机当前 PWM 脉宽 (微秒) */
+        current_servo = SERVO_INIT + delta;
+
+        if (current_servo < 1100) current_servo = 1100;
+        if (current_servo > 1900) current_servo = 1900;
+
+        TIM12->CCR1 = (uint16_t)current_servo;
+
+        OLED_ShowString(0, 0, (u8*)"[SERVO TEST]");
+
         OLED_ShowString(0, 16, (u8*)"PULSE:");
         OLED_ShowNumber(48, 16, (uint32_t)current_servo, 4, 12);
         OLED_ShowString(80, 16, (u8*)"us");
 
-        /* 显示当前转向状态 */
         if (current_servo < 1450) {
             OLED_ShowString(0, 34, (u8*)"DIR: <-- LEFT   ");
         } else if (current_servo > 1550) {
@@ -224,20 +106,27 @@ void Test_Servo_OLED(void *pvParameters)
         }
     }
 }
+
+
+
+
 void sys_init(){
 	DWT_Delay_Init();
 	I2C_GPIOInit();
 	OLED_Init();
 	OLED_Clear();
 	Motor_Init();
-	Set_Pwm(0, 0, 0, 0, 0);
+	Set_Pwm(0, 0, 0, 0, 1500);
 
-	/* 初始化 PS2 手柄接收器并配置为红灯模拟模式 */
 	PS2_SetInit();
 	Encoder_Init();
-
-
+	
+	HAL_UART_Receive_IT(&huart2, (uint8_t *)&rx_buff, 1); 
 }
+
+
+
+		 
 /* USER CODE END 0 */
 
 /**
@@ -277,14 +166,19 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM12_Init();
+  MX_ADC1_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
 	sys_init();
 
-	xTaskCreate(vKeyTask, "vKeyTask", 128, NULL, 2, NULL);
-	xTaskCreate(pstwo_task, "pstwo_task", 128, NULL, 3, NULL);
-	xTaskCreate(Test_Servo_OLED, "Test_Servo_OLED", 256, NULL, 2, NULL);
+	xVofaQueue = xQueueCreate(8, sizeof(VofaPacket_t));
 
+	xTaskCreate(vKeyTask, "vKeyTask", 128, NULL, 2, NULL);
+	xTaskCreate(PID_task, "CarRemote", 512, NULL, 4, NULL);
+	xTaskCreate(OledTask, "OledTask", 512, NULL, 1, NULL);
+	xTaskCreate(VofaTask, "VofaTask", 512, NULL, 3, NULL);
+	
 	vTaskStartScheduler();
   /* USER CODE END 2 */
 
@@ -295,8 +189,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-
   }
   /* USER CODE END 3 */
 }

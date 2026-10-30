@@ -4,12 +4,12 @@
 Function: IIC pin initialization
 Input   : none
 Output  : none
-¹¦ÄÜ£ºIICÒı½Å³õÊ¼»¯£¨PB10-SCL, PB11-SDA£©
+åŠŸèƒ½ï¼šIICå¼•è„šåˆå§‹åŒ–ï¼ˆPB10-SCL, PB11-SDAï¼‰
 **************************************************************************/
 void I2C_GPIOInit(void)
 {
-    /* GPIO ÒÑÔÚ CubeMX µÄ MX_GPIO_Init() ÖĞÍê³É¿ªÂ©ÉÏÀ­³õÊ¼»¯ */
-    /* ´Ë´¦Ö»ĞèÈ·±£ I2C ×ÜÏß´¦ÓÚ¿ÕÏĞ×´Ì¬£¨¸ßµçÆ½£© */
+    /* GPIO å·²åœ¨ CubeMX çš„ MX_GPIO_Init() ä¸­å®Œæˆå¼€æ¼ä¸Šæ‹‰åˆå§‹åŒ– */
+    /* æ­¤å¤„åªéœ€ç¡®ä¿ I2C æ€»çº¿å¤„äºç©ºé—²çŠ¶æ€ï¼ˆé«˜ç”µå¹³ï¼‰ */
     IIC_SCL(1);
     IIC_SDA(1);
 }
@@ -18,11 +18,11 @@ void I2C_GPIOInit(void)
 Function: Simulate IIC start signal
 Input   : none
 Output  : none
-¹¦ÄÜ£ºÄ£ÄâIICÆğÊ¼ĞÅºÅ
+åŠŸèƒ½ï¼šæ¨¡æ‹ŸIICèµ·å§‹ä¿¡å·
 **************************************************************************/
 void I2C_Start(void)
 {
-    SDA_OUT();     // sdaÊä³ö
+    SDA_OUT();     // sdaè¾“å‡º
     IIC_SDA(1);
     if(!READ_SDA) return;	
     IIC_SCL(1);
@@ -30,23 +30,23 @@ void I2C_Start(void)
     IIC_SDA(0);    // START: when CLK is high, DATA change form high to low 
     if(READ_SDA) return;
     delay_us(1);
-    IIC_SCL(0);    // Ç¯×¡I2C×ÜÏß£¬×¼±¸·¢ËÍ»ò½ÓÊÕÊı¾İ 
+    IIC_SCL(0);    // é’³ä½I2Cæ€»çº¿ï¼Œå‡†å¤‡å‘é€æˆ–æ¥æ”¶æ•°æ® 
 }
 
 /**************************************************************************
 Function: Analog IIC end signal
 Input   : none
 Output  : none
-¹¦ÄÜ£ºÄ£ÄâIIC½áÊøĞÅºÅ
+åŠŸèƒ½ï¼šæ¨¡æ‹ŸIICç»“æŸä¿¡å·
 **************************************************************************/
 void I2C_Stop(void)
 {
-    SDA_OUT();     // sdaÊä³ö
+    SDA_OUT();     // sdaè¾“å‡º
     IIC_SCL(0);
     IIC_SDA(0);    // STOP: when CLK is high DATA change form low to high
     delay_us(1);
     IIC_SCL(1); 
-    IIC_SDA(1);    // ·¢ËÍI2C×ÜÏß½áÊøĞÅºÅ
+    IIC_SDA(1);    // å‘é€I2Cæ€»çº¿ç»“æŸä¿¡å·
     delay_us(1);	
 }
 
@@ -54,12 +54,12 @@ void I2C_Stop(void)
 Function: IIC Wait for ACK
 Input   : none
 Output  : 1: ACK received, 0: NACK / Timeout
-¹¦ÄÜ£ºµÈ´ıÓ¦´ğĞÅºÅ
+åŠŸèƒ½ï¼šç­‰å¾…åº”ç­”ä¿¡å·
 **************************************************************************/
 bool I2C_WaiteForAck(void)
 {
     u8 ucErrTime = 0;
-    SDA_IN();      // SDAÉèÖÃÎªÊäÈë  
+    SDA_IN();      // SDAè®¾ç½®ä¸ºè¾“å…¥  
     IIC_SDA(1);
     delay_us(1);	   
     IIC_SCL(1);
@@ -74,7 +74,7 @@ bool I2C_WaiteForAck(void)
         }
         delay_us(1);
     }
-    IIC_SCL(0);    // Ê±ÖÓÊä³ö0 	   
+    IIC_SCL(0);    // æ—¶é’Ÿè¾“å‡º0 	   
     return 1;
 }
 
@@ -82,7 +82,7 @@ bool I2C_WaiteForAck(void)
 Function: IIC response
 Input   : none
 Output  : none
-¹¦ÄÜ£ºIIC²úÉúACKÓ¦´ğ
+åŠŸèƒ½ï¼šIICäº§ç”ŸACKåº”ç­”
 **************************************************************************/
 void I2C_Ack(void)
 {
@@ -99,7 +99,7 @@ void I2C_Ack(void)
 Function: IIC don't reply
 Input   : none
 Output  : none
-¹¦ÄÜ£ºIIC²»²úÉúACKÓ¦´ğ
+åŠŸèƒ½ï¼šIICä¸äº§ç”ŸACKåº”ç­”
 **************************************************************************/ 
 void I2C_NAck(void)
 {
@@ -140,15 +140,15 @@ bool I2C_WriteBits(uint8_t DevAddr, uint8_t RegAddr, uint8_t BitStart, uint8_t L
 
 /**************************************************************************
 Function: IIC sends a byte
-Input   : Data: ´ı·¢ËÍÊı¾İ
+Input   : Data: å¾…å‘é€æ•°æ®
 Output  : none
-¹¦ÄÜ£ºIIC·¢ËÍÒ»¸ö×Ö½Ú
+åŠŸèƒ½ï¼šIICå‘é€ä¸€ä¸ªå­—èŠ‚
 **************************************************************************/
 void I2C_WriteByte(uint8_t Data)
 {
     u8 t;   
     SDA_OUT(); 	    
-    IIC_SCL(0);    // À­µÍÊ±ÖÓ¿ªÊ¼Êı¾İ´«Êä
+    IIC_SCL(0);    // æ‹‰ä½æ—¶é’Ÿå¼€å§‹æ•°æ®ä¼ è¾“
     for(t=0; t<8; t++)
     {              
         IIC_SDA((Data & 0x80) >> 7);
@@ -207,9 +207,9 @@ bool I2C_WriteBuff(uint8_t DevAddr, uint8_t RegAddr, uint8_t Num, uint8_t *pBuff
 
 /**************************************************************************
 Function: IIC reads a byte
-Input   : Ack: 1·¢ËÍACK, 0·¢ËÍNACK
-Output  : ¶ÁÈ¡µ½µÄ×Ö½ÚÊı¾İ
-¹¦ÄÜ£ºIIC¶ÁÈ¡Ò»¸ö×Ö½Ú
+Input   : Ack: 1å‘é€ACK, 0å‘é€NACK
+Output  : è¯»å–åˆ°çš„å­—èŠ‚æ•°æ®
+åŠŸèƒ½ï¼šIICè¯»å–ä¸€ä¸ªå­—èŠ‚
 **************************************************************************/
 uint8_t I2C_ReadByte(uint8_t Ack)
 {

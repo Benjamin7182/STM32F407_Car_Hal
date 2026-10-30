@@ -17,3 +17,11 @@ void delay_us(uint32_t us)
     uint32_t start = DWT->CYCCNT;
     while ((DWT->CYCCNT - start) < ticks);
 }
+
+void delay_ms(uint32_t ms)
+{
+    while (ms--)
+    {
+        delay_us(1000);
+    }
+}

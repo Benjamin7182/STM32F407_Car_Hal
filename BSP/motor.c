@@ -1,6 +1,6 @@
 #include "motor.h"
 
-// Æô¶¯ËÄÂ·µç»úÓë¶æ»úµÄ PWM Êä³ö
+// å¯åŠ¨å››è·¯ç”µæœºä¸Žèˆµæœºçš„ PWM è¾“å‡º
 void Motor_Init(void)
 {
     HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1); // Motor A
@@ -12,12 +12,12 @@ void Motor_Init(void)
     HAL_TIM_PWM_Start(&htim1,  TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&htim1,  TIM_CHANNEL_4);
 
-    // Æô¶¯Ç°ÂÖ×ªÏò¶æ»ú TIM12_CH2 (PB15)
+    // å¯åŠ¨å‰è½®è½¬å‘èˆµæœº TIM12_CH2 (PB15)
     HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2);
-    Servo_PWM = SERVO_INIT; // ÉÏµçÄ¬ÈÏ¶æ»ú¾ÓÖÐ (1500us)
+    Servo_PWM = SERVO_INIT; // ä¸Šç”µé»˜è®¤èˆµæœºå±…ä¸­ (1500us)
 }
 
-// ¸³Öµ PWM ¼Ä´æÆ÷¿ØÖÆµç»ú×ªËÙÓë×ªÏò¶æ»ú
+// èµ‹å€¼ PWM å¯„å­˜å™¨æŽ§åˆ¶ç”µæœºè½¬é€Ÿä¸Žè½¬å‘èˆµæœº
 void Set_Pwm(int motor_a, int motor_b, int motor_c, int motor_d, int servo)
 {
     // Motor A
@@ -56,11 +56,11 @@ void Set_Pwm(int motor_a, int motor_b, int motor_c, int motor_d, int servo)
         PWMD1 = 16799 - motor_d;
     }
 
-    // ¶æ»ú½Ç¶ÈÊä³ö (´ø°²È«ÏÞ·ù 800 ~ 2200us)
+    // èˆµæœºè§’åº¦è¾“å‡º (å¸¦å®‰å…¨é™å¹… 800 ~ 2200us)
     Set_Servo(servo);
 }
 
-// ¶ÀÁ¢ÉèÖÃ¶æ»ú PWM Âö¿í (Î¢Ãë)£¬´ø°²È«ÏÞ·ù
+// ç‹¬ç«‹è®¾ç½®èˆµæœº PWM è„‰å®½ (å¾®ç§’)ï¼Œå¸¦å®‰å…¨é™å¹…
 void Set_Servo(int servo_val)
 {
     if (servo_val < 800)  servo_val = 800;
@@ -68,7 +68,7 @@ void Set_Servo(int servo_val)
     Servo_PWM = servo_val;
 }
 
-// µç»úÈ«²¿Í£»úÖÆ¶¯
+// ç”µæœºå…¨éƒ¨åœæœºåˆ¶åŠ¨
 void Motor_Stop(void)
 {
     PWMA1 = 0; PWMA2 = 0;

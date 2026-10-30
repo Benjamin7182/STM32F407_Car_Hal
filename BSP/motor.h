@@ -16,7 +16,7 @@
 #define PWMD2 	  TIM1->CCR3	 //PWMD
 
 #define Servo_PWM  TIM12->CCR2
-#define SERVO_INIT 1500  //Servo zero point //???¨²¨¢?¦Ì?
+#define SERVO_INIT 1500  //Servo zero point //???ÃºÃ¡?Î¼?
 
 void Motor_Init(void);
 void Set_Pwm(int motor_a,int motor_b,int motor_c,int motor_d,int servo);

@@ -14,7 +14,7 @@
 #define SDA_IN()  
 #define SDA_OUT() 
 
-//IO≤Ÿ◊˜∫Ø ˝	 
+//IOÊìç‰ΩúÂáΩÊï∞	 
 #define IIC_SCL(n)   HAL_GPIO_WritePin(MPU6050_SCL_GPIO_Port, MPU6050_SCL_Pin, (n) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define IIC_SDA(n)   HAL_GPIO_WritePin(MPU6050_SDA_GPIO_Port, MPU6050_SDA_Pin, (n) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define READ_SDA   HAL_GPIO_ReadPin(MPU6050_SDA_GPIO_Port, MPU6050_SDA_Pin)
